@@ -1,14 +1,10 @@
 import TaskList from "./TaskList";
 import * as TaskStories from "./Task.stories";
 
-export default {
-  component: TaskList,
-  title: "TaskList",
-  decorators: [(story) => <div style={{ padding: "3rem" }}>{story()}</div>],
-  tags: ["autodocs"],
-};
+import { Provider } from "react-redux";
+import { configureStore, createSlice } from "@reduxjs/toolkit";
 
-export const Default = {
+export const MockedState = {
   args: {
     tasks: [
       { ...TaskStories.Default.args.task, id: "1", title: "Task 1" },
@@ -18,28 +14,96 @@ export const Default = {
       { ...TaskStories.Default.args.task, id: "5", title: "Task 5" },
       { ...TaskStories.Default.args.task, id: "6", title: "Task 6" },
     ],
+    status: "idle",
+    error: null,
   },
+};
+
+const Mockstore = ({ taskboxState, children }) => (
+  <Provider
+    store={configureStore({
+      reducer: {
+        taskbox: createSlice({
+          name: "taskbox",
+          initialState: taskboxState,
+          reducers: {
+            updateTaskState: (state, action) => {
+              const { id, newTaskState } = action.payload;
+              const taskId = state.tasks.findIndex((task) => task.id === id);
+
+              taskId >= 0 && (state.tasks[task].state = newTaskState);
+            },
+          },
+        }).reducer,
+      },
+    })}
+  >
+    {children}
+  </Provider>
+);
+
+export default {
+  component: TaskList,
+  title: "TaskList",
+  decorators: [(story) => <div style={{ padding: "3rem" }}>{story()}</div>],
+  tags: ["autodocs"],
+  excludeStories: /.*MockedState$/,
+};
+
+export const Default = {
+  decorators: [
+    (story) => <Mockstore taskboxState={MockedState}>{story()}</Mockstore>,
+  ],
 };
 
 export const WithPinnedTasks = {
-  args: {
-    tasks: [
-      ...Default.args.tasks.slice(0, 5),
-      { id: "6", title: "Task 6 (Pinned)", state: "TASK_PINNED" },
-    ],
-  },
+  decorators: [
+    (story) => {
+      const pinnedtasks = [
+        ...MockedState.tasks.slice(0, 5),
+        { id: "6", title: "Task 6 (pinned)", state: "TASK_PINNED" },
+      ];
+
+      return (
+        <Mockstore
+          taskboxState={{
+            ...MockedState,
+            tasks: pinnedtasks,
+          }}
+        >
+          {story()}
+        </Mockstore>
+      );
+    },
+  ],
 };
 
 export const Loading = {
-  args: {
-    tasks: [],
-    loading: true,
-  },
+  decorators: [
+    (story) => (
+      <Mockstore
+        taskboxState={{
+          ...MockedState,
+          status: "loading",
+        }}
+      >
+        {story()}
+      </Mockstore>
+    ),
+  ],
 };
 
-export const Empth = {
-  args: {
-    ...Loading.args,
-    loading: false,
-  },
+export const Empty = {
+  decorators: [
+    (story) => (
+      <Mockstore
+        taskboxState={{
+          ...MockedState,
+          tasks: [],
+        }}
+      >
+        {story()}
+      </Mockstore>
+    ),
+  ],
 };
