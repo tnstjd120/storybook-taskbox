@@ -6,7 +6,6 @@ const defaultTasks = [
   { id: "3", title: "Something else", state: "TASK_INBOX" },
   { id: "4", title: "Something again", state: "TASK_INBOX" },
 ];
-
 const TaskBoxData = {
   tasks: defaultTasks,
   status: "idle",
@@ -19,9 +18,10 @@ const TasksSlice = createSlice({
   reducers: {
     updateTaskState: (state, action) => {
       const { id, newTaskState } = action.payload;
-      const taskId = state.tasks.findIndex((task) => task.id === id);
-
-      taskId >= 0 && (state.tasks[taskId].state = newTaskState);
+      const task = state.tasks.findIndex((task) => task.id === id);
+      if (task >= 0) {
+        state.tasks[task].state = newTaskState;
+      }
     },
   },
 });
